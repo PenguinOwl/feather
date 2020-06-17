@@ -1,0 +1,18 @@
+name: feather
+version: 0.1.0
+
+authors:
+  - PenguinOwl <henryjboles@gmail.com>
+
+dependencies:
+  bindata:
+    github: penguinowl/bindata
+    commit: 19f0af6
+
+targets:
+  feather:
+    main: src/feather.cr
+
+crystal: 0.35.0
+
+license: MIT

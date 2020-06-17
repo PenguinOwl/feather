@@ -1,0 +1,6 @@
+version: 2.0
+shards:
+  bindata:
+    git: https://github.com/penguinowl/bindata.git
+    version: 1.5.4+git.commit.19f0af6807b5370b53f9bb57e16cef566a11e6cb
+
