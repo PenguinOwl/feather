@@ -29,9 +29,9 @@ class Server
     @tcp_port = tcp_port
     @udp_port = udp_port
     Log.info { "Initalizing TCP and UDP servers" }
-    @tcp_server = TCPServer.new("localhost", tcp_port)
+    @tcp_server = TCPServer.new("0.0.0.0", tcp_port)
     @udp_server = UDPSocket.new
-    @udp_server.bind("localhost", udp_port)
+    @udp_server.bind("0.0.0.0", udp_port)
     @@instance = self
   end
 

@@ -198,6 +198,7 @@ class CelesteNetConnection < Connection
 
   class TCPHandshake < Data
     @@data_id = :hsTUC
+    uint16 :version
     string :name
     int32 :udp_port
   end
