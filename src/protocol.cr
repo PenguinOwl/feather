@@ -16,10 +16,10 @@ module CelesteProtocol
 
     def self.handle_client(client)
       spawn do
-        client.keepalive = true
-        client.tcp_keepalive_idle = 20
-        client.tcp_keepalive_interval = 10
-        client.tcp_keepalive_count = 3
+        # client.keepalive = true
+        # client.tcp_keepalive_idle = 20
+        # client.tcp_keepalive_interval = 10
+        # client.tcp_keepalive_count = 3
         # client.tcp_nodelay = true
         client.puts TEAPOT
         data = Bytes.new(500)

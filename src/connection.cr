@@ -59,7 +59,8 @@ abstract class Connection
       udp_mutex.synchronize do
         begin
           Server.instance.udp_server.send(packet, to: Server.instance.udp_connections.key_for(self))
-        rescue IO::Error
+        rescue e
+          Log.info { "Failed to send udp packet to connection #{id}: #{e.class} - #{e.message}" }
           close
         end
       end

@@ -4,13 +4,16 @@ require "bindata"
 class CelesteNetConnection < Connection
   Log = ::Log.for("celestenet")
 
+  @keepalive_timer = Time.utc
+
   def initialize(client)
     super(client)
     keepalive = Packet(Keepalive).new
     spawn do
       until closed?
-        sleep 1
         send_udp keepalive
+        close if Time.utc - @keepalive_timer > 2.seconds
+        sleep 1
       end
     end
   end
@@ -93,6 +96,8 @@ class CelesteNetConnection < Connection
       emote_data.player_id = emote.player_id
       emote_data.text = emote.text
       Server.instance.handle_emote(id, emote_data)
+    when "keepalive"
+      @keepalive_timer = Time.utc
     end
   end
 
