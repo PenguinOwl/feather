@@ -4,6 +4,17 @@ require "bindata"
 class CelesteNetConnection < Connection
   Log = ::Log.for("celestenet")
 
+  def initialize(client)
+    super(client)
+    keepalive = Packet(Keepalive).new
+    spawn do
+      until closed?
+        sleep 1
+        send_udp keepalive
+      end
+    end
+  end
+
   def handle(data)
     packet = data.read_bytes(Packet(Data))
     case packet.data_type
