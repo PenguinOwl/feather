@@ -196,7 +196,15 @@ kind lowly merry neat odd proud quirky robust strict tidy unique vivid witty you
       self[0] = Channel.new("master", 0_u32) unless self[0]?
     end
     def filter(id)
-      return self.reject{ |k, v| v.name[0] == '!' && !v.players.includes? id }
+      return reject{ |k, v| v.name.starts_with?('!') && !v.players.includes? id }
+    end
+    def back_filter(id)
+      channel = self[Server.instance.connection(id).channel]
+      if channel.name.starts_with? '!'
+        return self.select{ |k, v| v == channel }
+      else
+        return self
+      end
     end
   end
 

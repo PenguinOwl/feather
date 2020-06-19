@@ -13,6 +13,7 @@ abstract class Connection
   property state
   property tcp_mutex
   property udp_mutex
+  property admin = false
   getter closed = false
 
   @@connection_counter : UInt32 = 1

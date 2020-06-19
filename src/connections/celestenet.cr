@@ -16,6 +16,7 @@ class CelesteNetConnection < Connection
           Log.info {"Connection #{id} failed to send keepalive packet"}
           close
         end
+        puts Time.utc - @keepalive_timer
         sleep 1
       end
     end
@@ -215,7 +216,6 @@ class CelesteNetConnection < Connection
     packet = Packet(ChannelMove).new
     channel_move = packet.content
     channel_move.player_id = channel_move_data.player_id
-    channel_move.channel_id = channel_move_data.channel_id
     send_tcp packet
   end
 
@@ -406,7 +406,6 @@ class CelesteNetConnection < Connection
   class ChannelMove < Data
     @@data_id = :channelMove
     uint32 :player_id
-    uint32 :channel_id
   end
 
   class Unparsed < Data

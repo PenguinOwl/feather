@@ -18,7 +18,7 @@ class Server
   end
 
   def each_connection(id)
-    whitelist = channel_list.filter(id).values.map(&.players).flatten
+    whitelist = channel_list.back_filter(id).values.map(&.players).flatten
     tcp_connections.values.each do |e|
       next unless whitelist.includes? e.id
       yield e
@@ -26,6 +26,23 @@ class Server
   end
 
   def each_other_connection(id)
+    whitelist = channel_list.back_filter(id).values.map(&.players).flatten
+    tcp_connections.values.each do |e|
+      next unless whitelist.includes? e.id
+      next if e.id == id
+      yield e
+    end
+  end
+
+  def each_visible_connection(id)
+    whitelist = channel_list.filter(id).values.map(&.players).flatten
+    tcp_connections.values.each do |e|
+      next unless whitelist.includes? e.id
+      yield e
+    end
+  end
+
+  def each_other_visible_connection(id)
     whitelist = channel_list.filter(id).values.map(&.players).flatten
     tcp_connections.values.each do |e|
       next unless whitelist.includes? e.id
