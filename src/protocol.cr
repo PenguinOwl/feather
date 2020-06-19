@@ -30,9 +30,11 @@ module CelesteProtocol
             self.handle(data, client)
             Fiber.yield
           end
-        rescue Socket::Error
+        rescue e
           if connection = Server.instance.tcp_connections[address]?
-            connection.close
+            Log.info { "Failed to read from tcp stream on connection #{connection.data.id}: #{e.class} - #{e.message}" }
+
+            # connection.close
           end
         end
       end

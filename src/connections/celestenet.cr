@@ -16,7 +16,6 @@ class CelesteNetConnection < Connection
           Log.info {"Connection #{id} failed to send keepalive packet"}
           close
         end
-        puts Time.utc - @keepalive_timer
         sleep 1
       end
     end
@@ -109,9 +108,8 @@ class CelesteNetConnection < Connection
       emote_data.player_id = emote.player_id
       emote_data.text = emote.text
       Server.instance.handle_emote(id, emote_data)
-    when "keepalive"
-      @keepalive_timer = Time.utc
     end
+    @keepalive_timer = Time.utc
   end
 
   def send_chat(chat_data)
