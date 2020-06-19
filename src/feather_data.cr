@@ -11,15 +11,13 @@ module FeatherData
 
   class PlayerState
     property id
-    property channel
     property sid
     property mode
     property level
     property idle
 
-    def initialize(id = UInt32::MAX, channel = 0_u32, sid = "", mode = 0_u8, level = "", idle = false)
+    def initialize(id = UInt32::MAX, sid = "", mode = 0_u8, level = "", idle = false)
       @id = id
-      @channel = channel
       @sid = sid
       @mode = mode
       @level = level
@@ -28,6 +26,26 @@ module FeatherData
   end
 
   class Color
+    macro color(color, string)
+      {{color.id.upcase}} = Color.new(
+        red: 0x{{string.id[0..1]}},
+        green: 0x{{string.id[2..3]}},
+        blue: 0x{{string.id[4..5]}}
+      )
+    end
+
+    color :gray, "696969"
+    color :green, "bada55"
+    color :cyan, "7fe5f0"
+    color :red, "ff0000"
+    color :pink, "ff80ed"
+    color :blue, "407294"
+    color :white, "ffffff"
+    color :yellow, "ffd700"
+    color :teal, "008080"
+    color :orange, "ffa500"
+    color :purple, "8a2be2"
+
     property red : UInt8
     property green : UInt8
     property blue : UInt8
@@ -139,4 +157,71 @@ module FeatherData
       @dead = dead
     end
   end
+
+  class Channel
+    property name : String
+    property owner : UInt32
+    property players
+
+    def initialize(name, owner)
+      @name = name
+      @owner = owner
+      @players = [] of UInt32
+    end
+  end
+
+  class ChannelList < Hash(UInt32, Channel)
+    ADJ = %w{alpine buttery coarse dreamy early fun green happy ionic jolly
+kind lowly merry neat odd proud quirky robust strict tidy unique vivid witty young zesty}
+    NOUN = %w{ant bear cat dog emu ferret gnu hawk ibex jackal kiwi lion moose newt owl penguin quail rat snake tuna vole walrus yak zebra}
+    def update
+      self.values.each &.players.clear
+      self[0] = Channel.new("master", 0_u32) unless self[0]?
+      Server.instance.each_connection do |conn|
+        channel : Channel
+        if null_checked_channel = self[conn.channel]?
+          channel = null_checked_channel
+        else
+          channel = Channel.new(ADJ.sample + "-" + NOUN.sample, conn.id)
+          self[conn.channel] = channel
+        end
+        channel.players << conn.id
+      end
+      reject! { |k, v| v.players.empty? }
+      each do |k, v|
+        unless v.players.includes? v.owner || v.owner == 0
+          v.owner = v.players.first
+        end
+      end
+      self[0] = Channel.new("master", 0_u32) unless self[0]?
+    end
+    def filter(id)
+      return self.reject{ |k, v| v.name[0] == '!' && !v.players.includes? id }
+    end
+  end
+
+  class Command
+    property command
+    property args
+    property sender
+    property time
+
+    def initialize(command = "", args = [] of String, sender = 0_u32, time = Time.utc)
+      @command = command
+      @args = args
+      @sender = sender
+      @time = time
+    end
+  end
+
+  class ChannelMove
+    property player_id
+    property channel_id
+
+    def initialize(player_id = 0_u32, channel_id = 0_u32)
+      @player_id = player_id
+      @channel_id = channel_id
+    end
+  end
+
 end

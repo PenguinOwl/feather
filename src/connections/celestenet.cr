@@ -12,7 +12,10 @@ class CelesteNetConnection < Connection
     spawn do
       until closed?
         send_udp keepalive
-        close if Time.utc - @keepalive_timer > 2.seconds
+        if Time.utc - @keepalive_timer > 7.seconds
+          Log.info {"Connection #{id} failed to send keepalive packet"}
+          close
+        end
         sleep 1
       end
     end
@@ -65,16 +68,25 @@ class CelesteNetConnection < Connection
       Server.instance.handle_player_frame(id, player_frame_data)
     when "chat"
       packet = data.read_bytes(Packet(Chat))
-      chat_data = FeatherData::Chat.new
       chat = packet.content
-      chat_data.player_data.id = chat.player_id
-      chat_data.color.red = chat.r
-      chat_data.color.green = chat.g
-      chat_data.color.blue = chat.b
-      chat_data.text = chat.text
-      chat_data.tag = chat.tag
-      chat_data.time = chat.time.value
-      Server.instance.handle_chat(id, chat_data)
+      if chat.text.starts_with? Server::COMMAND_PREFIX
+        command_data = FeatherData::Command.new
+        data = chat.text.lchop(Server::COMMAND_PREFIX).split(' ')
+        command_data.command = data[0]? ? data[0] : ""
+        command_data.args = data[1..-1]? ? data[1..-1] : [] of String
+        command_data.sender = id
+        Server.instance.handle_command(id, command_data)
+      else
+        chat_data = FeatherData::Chat.new
+        chat_data.player_data.id = chat.player_id
+        chat_data.color.red = chat.r
+        chat_data.color.green = chat.g
+        chat_data.color.blue = chat.b
+        chat_data.text = chat.text
+        chat_data.tag = chat.tag
+        chat_data.time = chat.time.value
+        Server.instance.handle_chat(id, chat_data)
+      end
     when "playerInfo"
       packet = data.read_bytes(Packet(PlayerInfo))
       @data.name = packet.content.name
@@ -84,9 +96,9 @@ class CelesteNetConnection < Connection
       player_state = packet.content
       player_state_data = FeatherData::PlayerState.new
       player_state_data.id = player_state.id
-      player_state_data.channel = player_state.channel
       player_state_data.sid = player_state.sid
       player_state_data.mode = player_state.mode
+      player_state_data.level = player_state.level
       player_state_data.idle = player_state.idle
       Server.instance.handle_player_state(id, player_state_data)
     when "emote"
@@ -120,9 +132,9 @@ class CelesteNetConnection < Connection
     packet = Packet(PlayerState).new
     player_state = packet.content
     player_state.id = player_state_data.id
-    player_state.channel = player_state_data.channel
     player_state.sid = player_state_data.sid
     player_state.mode = player_state_data.mode
+    player_state.level = player_state_data.level
     player_state.idle = player_state_data.idle
     send_tcp packet
   end
@@ -183,6 +195,27 @@ class CelesteNetConnection < Connection
     emote = packet.content
     emote.player_id = emote_data.player_id
     emote.text = emote_data.text
+    send_tcp packet
+  end
+
+  def send_channel_list(channel_list_data)
+    packet = Packet(ChannelList).new
+    channel_list = packet.content
+    channel_list.channels = channel_list_data.to_a.map do |id, channel_data|
+      channel = Channel.new
+      channel.name = channel_data.name
+      channel.id = id
+      channel.players = channel_data.players
+      channel
+    end
+    send_tcp packet
+  end
+
+  def send_channel_move(channel_move_data)
+    packet = Packet(ChannelMove).new
+    channel_move = packet.content
+    channel_move.player_id = channel_move_data.player_id
+    channel_move.channel_id = channel_move_data.channel_id
     send_tcp packet
   end
 
@@ -351,11 +384,29 @@ class CelesteNetConnection < Connection
   class PlayerState < Data
     @@data_id = :playerState
     uint32 :id
-    uint32 :channel
     string :sid
     uint8 :mode
     string :level
     byte_bool :idle
+  end
+
+  class ChannelList < Data
+    @@data_id = :channelList
+    uint32 :channel_size, value: ->{ channels.size }
+    variable_array channels : Channel, read_next: ->{ channels.size < channel_size }
+  end
+
+  class Channel < Data
+    string :name
+    uint32 :id
+    uint32 :players_size, value: ->{ players.size }
+    variable_array players : UInt32, read_next: ->{ players.size < players_size }
+  end
+
+  class ChannelMove < Data
+    @@data_id = :channelMove
+    uint32 :player_id
+    uint32 :channel_id
   end
 
   class Unparsed < Data

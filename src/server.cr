@@ -19,6 +19,8 @@ class Server
   property tcp_connections = {} of Socket::IPAddress => Connection
   property udp_connections = {} of Socket::IPAddress => Connection
 
+  property channel_list = FeatherData::ChannelList.new
+
   def self.instance
     return @@instance.not_nil!
   end

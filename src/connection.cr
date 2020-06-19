@@ -8,7 +8,9 @@ abstract class Connection
   property remote : Socket::IPAddress
   property client : TCPSocket
   property id : UInt32
+  property channel : UInt32
   property data
+  property state
   property tcp_mutex
   property udp_mutex
   getter closed = false
@@ -22,7 +24,9 @@ abstract class Connection
     @udp_mutex = Mutex.new
     @id = @@connection_counter
     @@connection_counter += 1
+    @channel = 0
     @data = FeatherData::PlayerData.new(id: id)
+    @state = FeatherData::PlayerState.new
   end
 
   def closed?
@@ -73,4 +77,6 @@ abstract class Connection
   abstract def send_player_info(data)
   abstract def send_player_frame(data)
   abstract def send_emote(data)
+  abstract def send_channel_list(data)
+  abstract def send_channel_move(data)
 end

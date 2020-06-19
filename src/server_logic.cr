@@ -3,7 +3,7 @@ class Server
     return tcp_connections.values.find { |e| e.id == id }.not_nil!
   end
 
-  def connections(id)
+  def connections
     return tcp_connections.values
   end
 
@@ -17,9 +17,36 @@ class Server
     end
   end
 
+  def each_connection(id)
+    whitelist = channel_list.filter(id).values.map(&.players).flatten
+    tcp_connections.values.each do |e|
+      next unless whitelist.includes? e.id
+      yield e
+    end
+  end
+
   def each_other_connection(id)
+    whitelist = channel_list.filter(id).values.map(&.players).flatten
+    tcp_connections.values.each do |e|
+      next unless whitelist.includes? e.id
+      next if e.id == id
+      yield e
+    end
+  end
+
+  def each_connection_in_channel(id)
+    whitelist = channel_list[connection(id).channel].players
+    tcp_connections.values.each do |e|
+      next unless whitelist.includes? e.id
+      yield e
+    end
+  end
+
+  def each_other_connection_in_channel(id)
+    whitelist = channel_list[connection(id).channel].players
     tcp_connections.values.each do |e|
       next if e.id == id
+      next unless whitelist.includes? e.id
       yield e
     end
   end
